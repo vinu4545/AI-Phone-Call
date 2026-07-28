@@ -1,33 +1,53 @@
-import socket
+import socketserver
 
-HOST = "127.0.0.1"
-PORT = 8084
+from backend.call_handler import CallHandler
+from backend.config.config import OUTBOUND_HOST, OUTBOUND_PORT
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-server.bind((HOST, PORT))
-server.listen(5)
+class ESLRequestHandler(socketserver.BaseRequestHandler):
 
-print(f"Listening on {HOST}:{PORT}")
+    def handle(self):
+        print("\n" + "=" * 60)
+        print("Incoming Connection")
+        print("=" * 60)
 
-while True:
+        try:
+            CallHandler(self.request).handle()
+            print("Handler finished.")
 
-    conn, addr = server.accept()
+        except Exception as e:
+            print(f"Handler Error: {e}")
+            import traceback
+            traceback.print_exc()
+
+
+class ThreadedTCPServer(socketserver.ThreadingMixIn,
+                        socketserver.TCPServer):
+    allow_reuse_address = True
+    daemon_threads = True
+
+
+def main():
+
+    server = ThreadedTCPServer(
+        (OUTBOUND_HOST, OUTBOUND_PORT),
+        ESLRequestHandler,
+    )
 
     print("=" * 60)
-    print("Incoming FreeSWITCH Connection")
-    print(addr)
+    print("Outbound ESL Server")
+    print(f"Listening on {OUTBOUND_HOST}:{OUTBOUND_PORT}")
+    print("=" * 60)
 
-    while True:
+    try:
+        server.serve_forever()
 
-        data = conn.recv(4096)
+    except KeyboardInterrupt:
+        print("\nStopping server...")
 
-        if not data:
-            break
+    finally:
+        server.server_close()
 
-        print(data.decode(errors="ignore"))
 
-    conn.close()
-
-    print("Connection closed")
+if __name__ == "__main__":
+    main()

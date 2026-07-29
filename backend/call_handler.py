@@ -1,5 +1,5 @@
 import sys
-
+import time 
 from backend.config.config import ESL_PATH
 
 # Add the FreeSWITCH ESL Python module path
@@ -44,34 +44,46 @@ class CallHandler:
         reply = self.con.execute("answer")
 
         print("Answer reply:", reply)
+        wav_file = "/home/vinay-gaddam/Documents/Orbit_Services/AI-Phone-Call/recordings/hello.wav"
+        reply = self.con.execute(
+            "playback",
+            wav_file
+        )
+        print("Playback reply:", reply)
 
-        print("\nEntering event loop...\n")
+        # print("\nEntering event loop...\n")
 
-        counter = 0
+        # counter = 0
 
-        while True:
+        # while True:
 
-            connected = self.con.connected()
+        #     connected = self.con.connected()
 
-            print(f"[{counter}] connected = {connected}")
+        #     print(f"[{counter}] connected = {connected}")
 
-            if not connected:
-                print("\nESL connection has been closed.")
-                break
+        #     if not connected:
+        #         print("\nESL connection has been closed.")
+        #         break
 
-            event = self.con.recvEventTimed(1000)
+        #     event = self.con.recvEventTimed(1000)
 
-            if event:
-                event_name = event.getHeader("Event-Name")
-                print(f"[{counter}] Event: {event_name}")
+        #     if event:
+        #         event_name = event.getHeader("Event-Name")
+        #         print(f"[{counter}] Event: {event_name}")
 
-                if event_name == "CHANNEL_HANGUP":
-                    print("\nCaller hung up.")
-                    break
+        #         if event_name == "CHANNEL_HANGUP":
+        #             print("\nCaller hung up.")
+        #             break
 
-            else:
-                print(f"[{counter}] No event received.")
+        #     else:
+        #         print(f"[{counter}] No event received.")
 
-            counter += 1
+        #     counter += 1
+
+        print("Sleeping...")
+
+        time.sleep(120)
+
+        print("Done sleeping")
 
         print("\nCall session ended.")

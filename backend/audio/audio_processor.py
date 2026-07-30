@@ -20,30 +20,32 @@ class AudioProcessor:
 
             while self.session.running:
 
+                #
+                # Read one PCM frame
+                #
                 pcm = await self.session.get_incoming_audio()
+
+                logger.info(
+                    "Processor -> %d bytes",
+                    len(pcm)
+                )
 
                 #
                 # Temporary Echo
                 #
-                # This verifies the complete media pipeline:
+                # Later this becomes:
                 #
-                # Phone
+                # PCM
                 #   ↓
-                # FreeSWITCH
+                # VAD
                 #   ↓
-                # AudioReceiver
+                # STT
                 #   ↓
-                # Incoming Queue
+                # LLM
                 #   ↓
-                # AudioProcessor
+                # TTS
                 #   ↓
                 # Outgoing Queue
-                #   ↓
-                # AudioSender
-                #   ↓
-                # FreeSWITCH
-                #   ↓
-                # Caller
                 #
 
                 await self.session.push_outgoing_audio(pcm)

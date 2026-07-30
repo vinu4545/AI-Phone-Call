@@ -1,12 +1,13 @@
 import asyncio
 import logging
 
-from websockets.server import serve
+from websockets.asyncio.server import serve
 from websockets.exceptions import ConnectionClosed
 
 from backend.media.media_session import MediaSession
 from backend.media.audio_receiver import AudioReceiver
 from backend.media.audio_sender import AudioSender
+from backend.audio.audio_processor import AudioProcessor
 
 
 logging.basicConfig(
@@ -36,10 +37,15 @@ class WebSocketServer:
         session = MediaSession(websocket)
 
         receiver = AudioReceiver(session)
+        processor = AudioProcessor(session)
         sender = AudioSender(session)
 
         receiver_task = asyncio.create_task(
             receiver.start()
+        )
+
+        processor_task = asyncio.create_task(
+            processor.start()
         )
 
         sender_task = asyncio.create_task(
@@ -57,6 +63,7 @@ class WebSocketServer:
         finally:
 
             receiver_task.cancel()
+            processor_task.cancel()
             sender_task.cancel()
 
             await session.close()

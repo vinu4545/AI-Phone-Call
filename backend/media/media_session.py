@@ -9,57 +9,67 @@ class MediaSession:
 
     def __init__(self, websocket):
 
-        # ----------------------------
-        # Network
-        # ----------------------------
+        # ---------------------------------
+        # WebSocket
+        # ---------------------------------
+
         self.websocket = websocket
 
-        # ----------------------------
+        # ---------------------------------
         # Audio Queues
-        # ----------------------------
+        # ---------------------------------
+
         self.incoming_audio = asyncio.Queue()
 
         self.outgoing_audio = asyncio.Queue()
 
-        # ----------------------------
-        # Future metadata
-        # ----------------------------
+        # ---------------------------------
+        # Call Metadata
+        # ---------------------------------
+
         self.call_uuid = None
 
         self.esl_connection = None
 
-        # ----------------------------
+        # ---------------------------------
         # Session State
-        # ----------------------------
+        # ---------------------------------
+
         self.running = True
 
-    # ====================================================
+    # ======================================================
     # Incoming Audio
-    # ====================================================
+    # ======================================================
 
-    async def push_incoming_audio(self, pcm: bytes):
+    async def push_incoming_audio(
+        self,
+        pcm: bytes
+    ):
 
         await self.incoming_audio.put(pcm)
 
-    async def get_incoming_audio(self) -> bytes:
+    async def get_incoming_audio(self):
 
         return await self.incoming_audio.get()
 
-    # ====================================================
+    # ======================================================
     # Outgoing Audio
-    # ====================================================
+    # ======================================================
 
-    async def push_outgoing_audio(self, pcm: bytes):
+    async def push_outgoing_audio(
+        self,
+        pcm: bytes
+    ):
 
         await self.outgoing_audio.put(pcm)
 
-    async def get_outgoing_audio(self) -> bytes:
+    async def get_outgoing_audio(self):
 
         return await self.outgoing_audio.get()
 
-    # ====================================================
+    # ======================================================
     # Cleanup
-    # ====================================================
+    # ======================================================
 
     async def close(self):
 

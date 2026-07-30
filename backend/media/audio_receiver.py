@@ -25,24 +25,23 @@ class AudioReceiver:
 
                 message = await websocket.recv()
 
-                logger.info("-" * 60)
-                logger.info("Received frame")
-
+                #
+                # FreeSWITCH occasionally sends text frames.
+                #
                 if isinstance(message, str):
 
-                    logger.info("Frame Type : TEXT")
-                    logger.info("Length     : %d", len(message))
-                    logger.info("Content    : %s", message)
+                    logger.info("Receiver -> TEXT : %s", message)
 
                     continue
 
                 pcm = bytes(message)
 
-                logger.info("Frame Type : BINARY")
-                logger.info("PCM Bytes  : %d", len(pcm))
+                logger.info(
+                    "Receiver -> %d bytes",
+                    len(pcm)
+                )
 
-                # Uncomment later after protocol is verified.
-                # await self.session.push_incoming_audio(pcm)
+                await self.session.push_incoming_audio(pcm)
 
         except ConnectionClosed:
 

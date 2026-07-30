@@ -1,4 +1,5 @@
 import logging
+
 from websockets.exceptions import ConnectionClosed
 
 from backend.media.media_session import MediaSession
@@ -24,22 +25,24 @@ class AudioReceiver:
 
                 message = await websocket.recv()
 
-                # Ignore text messages.
+                logger.info("-" * 60)
+                logger.info("Received frame")
+
                 if isinstance(message, str):
-                    logger.warning(
-                        "Ignoring unexpected text message: %s",
-                        message
-                    )
+
+                    logger.info("Frame Type : TEXT")
+                    logger.info("Length     : %d", len(message))
+                    logger.info("Content    : %s", message)
+
                     continue
 
                 pcm = bytes(message)
 
-                logger.debug(
-                    "Received %d bytes",
-                    len(pcm)
-                )
+                logger.info("Frame Type : BINARY")
+                logger.info("PCM Bytes  : %d", len(pcm))
 
-                await self.session.push_incoming_audio(pcm)
+                # Uncomment later after protocol is verified.
+                # await self.session.push_incoming_audio(pcm)
 
         except ConnectionClosed:
 

@@ -19,8 +19,8 @@ class WebSocketServer:
 
     def __init__(
         self,
-        host: str = "0.0.0.0",
-        port: int = 9000
+        host="0.0.0.0",
+        port=9000
     ):
         self.host = host
         self.port = port
@@ -29,15 +29,22 @@ class WebSocketServer:
 
         client = websocket.remote_address
 
-        logging.info(f"WebSocket connected: {client}")
+        logging.info("=" * 60)
+        logging.info("NEW WEBSOCKET CONNECTION")
+        logging.info("Client : %s", client)
 
         session = MediaSession(websocket)
 
         receiver = AudioReceiver(session)
         sender = AudioSender(session)
 
-        receiver_task = asyncio.create_task(receiver.start())
-        sender_task = asyncio.create_task(sender.start())
+        receiver_task = asyncio.create_task(
+            receiver.start()
+        )
+
+        sender_task = asyncio.create_task(
+            sender.start()
+        )
 
         try:
 
@@ -45,7 +52,7 @@ class WebSocketServer:
 
         except ConnectionClosed:
 
-            logging.info(f"Connection closed: {client}")
+            logging.info("Connection closed.")
 
         finally:
 
@@ -54,7 +61,7 @@ class WebSocketServer:
 
             await session.close()
 
-            logging.info(f"Session cleaned: {client}")
+            logging.info("Session destroyed.")
 
     async def start(self):
 
@@ -63,12 +70,16 @@ class WebSocketServer:
             self.host,
             self.port,
             max_size=None,
-            max_queue=None
+            max_queue=None,
         ):
 
+            logging.info("=" * 60)
             logging.info(
-                f"Media WebSocket listening on ws://{self.host}:{self.port}"
+                "Listening on ws://%s:%d",
+                self.host,
+                self.port
             )
+            logging.info("=" * 60)
 
             await asyncio.Future()
 

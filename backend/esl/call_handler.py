@@ -1,5 +1,6 @@
 import sys
-import time 
+import time
+
 from backend.config.config import ESL_PATH
 
 # Add the FreeSWITCH ESL Python module path
@@ -9,11 +10,13 @@ from ESL import ESLconnection
 
 
 class CallHandler:
+
     def __init__(self, request):
         self.fd = request.fileno()
         self.con = ESLconnection(self.fd)
 
     def handle(self):
+
         print("=" * 60)
 
         print("Connected:", self.con.connected())
@@ -39,51 +42,43 @@ class CallHandler:
 
         print("========================")
 
+        uuid = info.getHeader("unique-id")
+
+        print("\nUUID:", uuid)
+
         print("\nAnswering call...")
 
         reply = self.con.execute("answer")
 
         print("Answer reply:", reply)
-        wav_file = "/home/vinay-gaddam/Documents/Orbit_Services/AI-Phone-Call/recordings/hello.wav"
-        reply = self.con.execute(
-            "playback",
-            wav_file
+
+        command = (
+            f"{uuid} "
+            f"start "
+            f"ws://127.0.0.1:9000 "
+            f"mono "
+            f"8000"
         )
-        print("Playback reply:", reply)
 
-        # print("\nEntering event loop...\n")
+        print("\nExecuting API:")
+        print("uuid_audio_stream", command)
 
-        # counter = 0
+        try:
 
-        # while True:
+            reply = self.con.api(
+                f"uuid_audio_stream {command}"
+            )
 
-        #     connected = self.con.connected()
+            print("\nAPI reply:")
+            print(reply)
 
-        #     print(f"[{counter}] connected = {connected}")
+        except Exception as e:
 
-        #     if not connected:
-        #         print("\nESL connection has been closed.")
-        #         break
+            print("\nAPI exception:")
+            print(e)
 
-        #     event = self.con.recvEventTimed(1000)
-
-        #     if event:
-        #         event_name = event.getHeader("Event-Name")
-        #         print(f"[{counter}] Event: {event_name}")
-
-        #         if event_name == "CHANNEL_HANGUP":
-        #             print("\nCaller hung up.")
-        #             break
-
-        #     else:
-        #         print(f"[{counter}] No event received.")
-
-        #     counter += 1
-
-        print("Sleeping...")
+        print("\nSleeping for 120 seconds...")
 
         time.sleep(120)
 
-        print("Done sleeping")
-
-        print("\nCall session ended.")
+        print("\nDone.")

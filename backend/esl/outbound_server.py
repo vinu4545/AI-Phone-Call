@@ -1,6 +1,6 @@
 import socketserver
 
-from backend.call_handler import CallHandler
+from backend.esl.call_handler import CallHandler
 from backend.config.config import OUTBOUND_HOST, OUTBOUND_PORT
 
 

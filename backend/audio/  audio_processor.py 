@@ -2,6 +2,13 @@ import logging
 
 from backend.media.media_session import MediaSession
 
+from backend.audio.audio_buffer import AudioBuffer
+
+from backend.ai.vad import VoiceActivityDetector
+from backend.ai.stt import SpeechToText
+from backend.ai.llm import LLM
+from backend.ai.tts import TextToSpeech
+
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +19,22 @@ class AudioProcessor:
 
         self.session = session
 
+        #
+        # Audio Buffer
+        #
+        self.buffer = AudioBuffer()
+
+        #
+        # AI Pipeline
+        #
+        self.vad = VoiceActivityDetector()
+
+        self.stt = SpeechToText()
+
+        self.llm = LLM()
+
+        self.tts = TextToSpeech()
+
     async def start(self):
 
         logger.info("AudioProcessor started")
@@ -20,32 +43,38 @@ class AudioProcessor:
 
             while self.session.running:
 
+                #
+                # Receive one PCM frame (20 ms)
+                #
                 pcm = await self.session.get_incoming_audio()
+
+                #
+                # Store it in the buffer
+                #
+                self.buffer.append(pcm)
+
+                logger.info(
+                    "Buffered %.0f ms (%d bytes)",
+                    self.buffer.duration_ms(),
+                    self.buffer.size()
+                )
+
+                #
+                # Every 500 ms, check if speech exists
+                #
+                if self.buffer.has_audio(500):
+
+                    logger.info("500 ms audio accumulated.")
+
+                    chunk = self.buffer.read()
+
+                    result = self.vad.process(chunk)
+
+                    logger.info("VAD -> %s", result)
 
                 #
                 # Temporary Echo
                 #
-                # This verifies the complete media pipeline:
-                #
-                # Phone
-                #   ↓
-                # FreeSWITCH
-                #   ↓
-                # AudioReceiver
-                #   ↓
-                # Incoming Queue
-                #   ↓
-                # AudioProcessor
-                #   ↓
-                # Outgoing Queue
-                #   ↓
-                # AudioSender
-                #   ↓
-                # FreeSWITCH
-                #   ↓
-                # Caller
-                #
-
                 await self.session.push_outgoing_audio(pcm)
 
         except Exception:

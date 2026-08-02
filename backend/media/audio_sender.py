@@ -16,7 +16,9 @@ class AudioSender:
 
     async def start(self):
 
-        logger.info("AudioSender started")
+        logger.info("=" * 60)
+        logger.info("AudioSender Started")
+        logger.info("=" * 60)
 
         websocket = self.session.websocket
 
@@ -25,30 +27,39 @@ class AudioSender:
             while self.session.running:
 
                 #
-                # Wait for audio produced by the processor
+                # Wait until some component
+                # (currently AudioProcessor)
+                # places PCM in the outgoing queue.
                 #
                 pcm = await self.session.get_outgoing_audio()
 
-                if pcm is None:
+                if not pcm:
                     continue
+
+                #
+                # Send PCM to FreeSWITCH.
+                #
+                await websocket.send(pcm)
 
                 logger.info(
                     "Sender -> %d bytes",
                     len(pcm)
                 )
 
-                await websocket.send(pcm)
-
         except ConnectionClosed:
 
-            logger.info("WebSocket closed while sending audio.")
+            logger.info(
+                "WebSocket closed while sending."
+            )
 
         except Exception:
 
-            logger.exception("Unexpected error inside AudioSender")
+            logger.exception(
+                "AudioSender crashed."
+            )
 
         finally:
 
-            self.session.running = False
-
-            logger.info("AudioSender stopped")
+            logger.info(
+                "AudioSender Stopped"
+            )

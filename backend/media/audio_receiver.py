@@ -11,11 +11,12 @@ logger = logging.getLogger(__name__)
 class AudioReceiver:
 
     def __init__(self, session: MediaSession):
+
         self.session = session
 
     async def start(self):
 
-        logger.info("AudioReceiver started")
+        logger.info("AudioReceiver Started")
 
         websocket = self.session.websocket
 
@@ -23,14 +24,20 @@ class AudioReceiver:
 
             while self.session.running:
 
+                #
+                # Receive one frame
+                #
                 message = await websocket.recv()
 
                 #
-                # FreeSWITCH occasionally sends text frames.
+                # Ignore text frames.
                 #
                 if isinstance(message, str):
 
-                    logger.info("Receiver -> TEXT : %s", message)
+                    logger.debug(
+                        "TEXT FRAME -> %s",
+                        message
+                    )
 
                     continue
 
@@ -41,18 +48,29 @@ class AudioReceiver:
                     len(pcm)
                 )
 
-                await self.session.push_incoming_audio(pcm)
+                #
+                # Push to processing queue.
+                #
+                await self.session.push_incoming_audio(
+                    pcm
+                )
 
         except ConnectionClosed:
 
-            logger.info("WebSocket closed by peer.")
+            logger.info(
+                "WebSocket Closed."
+            )
 
         except Exception:
 
-            logger.exception("Unexpected error inside AudioReceiver")
+            logger.exception(
+                "Receiver crashed."
+            )
 
         finally:
 
             self.session.running = False
 
-            logger.info("AudioReceiver stopped")
+            logger.info(
+                "AudioReceiver Stopped"
+            )

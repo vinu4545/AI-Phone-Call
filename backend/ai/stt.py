@@ -1,25 +1,43 @@
 import logging
 
+
 logger = logging.getLogger(__name__)
 
 
 class SpeechToText:
     """
-    Speech-to-Text engine.
+    Temporary STT.
 
-    Later this will call Whisper.
+    Later:
+        Faster-Whisper
+
+    For now:
+        Always returns a dummy sentence.
     """
 
     def __init__(self):
 
-        logger.info("Initializing Speech-to-Text")
+        logger.info("SpeechToText Initialized")
 
-    async def transcribe(self, pcm: bytes):
+    async def transcribe(
+        self,
+        pcm: bytes
+    ):
 
-        """
-        Convert PCM to text.
+        logger.info(
+            "STT received %d bytes",
+            len(pcm)
+        )
 
-        Placeholder.
-        """
+        #
+        # Temporary
+        #
 
-        return ""
+        text = "Hello"
+
+        logger.info(
+            "STT -> %s",
+            text
+        )
+
+        return text

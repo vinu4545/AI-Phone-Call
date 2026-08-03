@@ -1,5 +1,10 @@
 """
 Audio processing package.
-"""
 
-from backend.audio.audio_buffer import AudioBuffer
+Contains all audio-related components such as:
+
+- SlidingBuffer
+- UtteranceBuffer
+- SpeechDetector
+- SpeechState
+"""

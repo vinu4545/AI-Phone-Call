@@ -28,6 +28,21 @@ class AudioReceiver:
                 # Receive one frame
                 #
                 message = await websocket.recv()
+                logger.info("Message type : %s", type(message))
+
+                if isinstance(message, bytes):
+
+                    logger.info(
+                        "First 32 bytes : %s",
+                        message[:32].hex()
+                    )
+
+                else:
+
+                    logger.info(
+                        "TEXT : %s",
+                        message[:300]
+                    )
 
                 #
                 # Ignore text frames.

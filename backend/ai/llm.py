@@ -1,23 +1,43 @@
 import logging
 
+
 logger = logging.getLogger(__name__)
 
 
 class LLM:
     """
-    Language Model.
+    Temporary LLM.
 
-    Later this will call OpenAI / Ollama / Gemini.
+    Later:
+        Gemini
+        OpenAI
+        Ollama
+
+    For now:
+        Returns a fixed response.
     """
 
     def __init__(self):
 
-        logger.info("Initializing LLM")
+        logger.info("LLM Initialized")
 
-    async def generate(self, text: str):
+    async def generate(
+        self,
+        prompt: str
+    ):
 
-        """
-        Generate assistant response.
-        """
+        logger.info(
+            "LLM Prompt -> %s",
+            prompt
+        )
 
-        return ""
+        response = (
+            "Hello. This is Orbit Services."
+        )
+
+        logger.info(
+            "LLM Response -> %s",
+            response
+        )
+
+        return response

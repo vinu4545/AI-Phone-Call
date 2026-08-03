@@ -1,7 +1,7 @@
+import asyncio
 import logging
 
 from websockets.exceptions import ConnectionClosed
-
 from backend.media.media_session import MediaSession
 
 
@@ -10,15 +10,15 @@ logger = logging.getLogger(__name__)
 
 class AudioSender:
 
+    FRAME_DURATION = 0.02      # 20 ms
+
     def __init__(self, session: MediaSession):
 
         self.session = session
 
     async def start(self):
 
-        logger.info("=" * 60)
         logger.info("AudioSender Started")
-        logger.info("=" * 60)
 
         websocket = self.session.websocket
 
@@ -26,19 +26,11 @@ class AudioSender:
 
             while self.session.running:
 
-                #
-                # Wait until some component
-                # (currently AudioProcessor)
-                # places PCM in the outgoing queue.
-                #
                 pcm = await self.session.get_outgoing_audio()
 
-                if not pcm:
+                if pcm is None:
                     continue
 
-                #
-                # Send PCM to FreeSWITCH.
-                #
                 await websocket.send(pcm)
 
                 logger.info(
@@ -46,20 +38,20 @@ class AudioSender:
                     len(pcm)
                 )
 
+                #
+                # IMPORTANT
+                # Stream at real-time speed.
+                #
+                await asyncio.sleep(self.FRAME_DURATION)
+
         except ConnectionClosed:
 
-            logger.info(
-                "WebSocket closed while sending."
-            )
+            logger.info("Sender WebSocket Closed")
 
         except Exception:
 
-            logger.exception(
-                "AudioSender crashed."
-            )
+            logger.exception("AudioSender crashed")
 
         finally:
 
-            logger.info(
-                "AudioSender Stopped"
-            )
+            logger.info("AudioSender Stopped")

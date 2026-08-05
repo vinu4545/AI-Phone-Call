@@ -6,7 +6,6 @@ from websockets.exceptions import ConnectionClosed
 
 from backend.media.media_session import MediaSession
 from backend.media.audio_receiver import AudioReceiver
-from backend.media.audio_sender import AudioSender
 from backend.media.audio_processor import AudioProcessor
 
 
@@ -20,24 +19,35 @@ logger = logging.getLogger(__name__)
 
 class WebSocketServer:
 
-    def __init__(self,
-                 host="0.0.0.0",
-                 port=9000):
+    def __init__(
+        self,
+        host="0.0.0.0",
+        port=9000
+    ):
 
         self.host = host
         self.port = port
 
-    async def handle_connection(self, websocket):
+    async def handle_connection(
+        self,
+        websocket
+    ):
 
         logger.info("=" * 60)
         logger.info("NEW CALL CONNECTED")
         logger.info("=" * 60)
 
-        session = MediaSession(websocket)
+        session = MediaSession(
+            websocket
+        )
 
-        receiver = AudioReceiver(session)
-        processor = AudioProcessor(session)
-        sender = AudioSender(session)
+        receiver = AudioReceiver(
+            session
+        )
+
+        processor = AudioProcessor(
+            session
+        )
 
         tasks = [
 
@@ -49,11 +59,6 @@ class WebSocketServer:
             asyncio.create_task(
                 processor.start(),
                 name="AudioProcessor"
-            ),
-
-            asyncio.create_task(
-                sender.start(),
-                name="AudioSender"
             )
 
         ]
@@ -64,36 +69,29 @@ class WebSocketServer:
 
         except ConnectionClosed:
 
-            logger.info("Caller disconnected.")
+            logger.info(
+                "Caller disconnected."
+            )
 
         finally:
 
             logger.info("=" * 60)
-            logger.info("Stopping media pipeline")
+            logger.info("Stopping Media Pipeline")
             logger.info("=" * 60)
 
             session.running = False
 
-            #
-            # Cancel all background tasks.
-            #
             for task in tasks:
 
                 if not task.done():
 
                     task.cancel()
 
-            #
-            # Wait for cancellation.
-            #
             await asyncio.gather(
                 *tasks,
                 return_exceptions=True
             )
 
-            #
-            # Cleanup.
-            #
             await session.close()
 
             logger.info("=" * 60)

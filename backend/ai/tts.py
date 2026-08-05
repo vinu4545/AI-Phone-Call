@@ -1,8 +1,11 @@
-import logging
+import base64
+import json
 import wave
 import audioop
+
 from pathlib import Path
 
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -11,58 +14,82 @@ class TextToSpeech:
     """
     Temporary TTS.
 
-    Ignores the input text and returns the contents
-    of hello.wav as PCM frames.
-
-    Later this file will be replaced by Kokoro.
+    Instead of generating speech,
+    this loads hello.wav and converts it into the
+    JSON format expected by mod_audio_stream.
     """
 
     SAMPLE_RATE = 8000
     CHANNELS = 1
-    SAMPLE_WIDTH = 2          # PCM16
-    FRAME_SIZE = 320          # 20 ms @ 8kHz PCM16 mono
+    SAMPLE_WIDTH = 2
 
     def __init__(self):
 
-        self.wav_path = Path(
-            "/home/vinay-gaddam/Documents/Orbit_Services/AI-Phone-Call/recordings/hello.wav"
+        #
+        # Project Root
+        #
+        project_root = Path(__file__).resolve().parents[2]
+
+        self.wav_path = (
+            project_root
+            / "recordings"
+            / "hello.wav"
         )
 
         logger.info(
             "Temporary TTS initialized."
         )
 
+        logger.info(
+            "WAV : %s",
+            self.wav_path
+        )
+
+    # ---------------------------------------------------------
+
     async def synthesize(
         self,
         text: str
-    ):
+    ) -> str:
 
         logger.info(
-            "TTS -> \"%s\"",
+            "TTS Input : %s",
             text
         )
 
         if not self.wav_path.exists():
 
-            logger.error(
-                "WAV file not found: %s",
+            raise FileNotFoundError(
                 self.wav_path
             )
 
-            return []
-
-        with wave.open(str(self.wav_path), "rb") as wav:
+        #
+        # Read WAV
+        #
+        with wave.open(
+            str(self.wav_path),
+            "rb"
+        ) as wav:
 
             channels = wav.getnchannels()
+
             sample_width = wav.getsampwidth()
+
             sample_rate = wav.getframerate()
 
             pcm = wav.readframes(
                 wav.getnframes()
             )
 
+        logger.info(
+            "Original WAV : %d Hz | %d Ch | %d bytes",
+            sample_rate,
+            channels,
+            len(pcm)
+        )
+
         #
-        # Convert to mono if required.
+        # Convert Stereo → Mono
         #
         if channels != self.CHANNELS:
 
@@ -74,7 +101,7 @@ class TextToSpeech:
             )
 
         #
-        # Convert sample width.
+        # Convert sample width
         #
         if sample_width != self.SAMPLE_WIDTH:
 
@@ -85,51 +112,65 @@ class TextToSpeech:
             )
 
         #
-        # Convert sample rate.
+        # Convert sample rate
         #
         if sample_rate != self.SAMPLE_RATE:
 
             pcm, _ = audioop.ratecv(
+
                 pcm,
+
                 self.SAMPLE_WIDTH,
+
                 self.CHANNELS,
+
                 sample_rate,
+
                 self.SAMPLE_RATE,
+
                 None
             )
 
         logger.info(
-            "Generated %d PCM bytes",
+            "PCM Bytes : %d",
             len(pcm)
         )
 
         #
-        # Split into 20 ms frames.
+        # Base64 Encode
         #
-        frames = []
-
-        for i in range(
-            0,
-            len(pcm),
-            self.FRAME_SIZE
-        ):
-
-            frame = pcm[i:i + self.FRAME_SIZE]
-
-            #
-            # Pad final frame.
-            #
-            if len(frame) < self.FRAME_SIZE:
-
-                frame += b"\x00" * (
-                    self.FRAME_SIZE - len(frame)
-                )
-
-            frames.append(frame)
+        audio_b64 = base64.b64encode(
+            pcm
+        ).decode()
 
         logger.info(
-            "Returning %d audio frames",
-            len(frames)
+            "Base64 Size : %d",
+            len(audio_b64)
         )
 
-        return frames
+        #
+        # Build JSON
+        #
+        payload = {
+
+            "type": "streamAudio",
+
+            "data": {
+
+                "audioDataType": "raw",
+
+                "sampleRate": self.SAMPLE_RATE,
+
+                "audioData": audio_b64
+
+            }
+
+        }
+
+        logger.info(
+            "Playback JSON Created."
+        )
+
+        return json.dumps(
+            payload
+        )

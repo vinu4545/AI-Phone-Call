@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class AudioPipeline:
     """
-    Complete AI pipeline.
+    Complete AI Pipeline.
 
     Utterance
         ↓
@@ -20,7 +20,7 @@ class AudioPipeline:
         ↓
     TTS
         ↓
-    PCM Frames
+    JSON Playback
     """
 
     def __init__(self):
@@ -31,13 +31,19 @@ class AudioPipeline:
 
         self.tts = TextToSpeech()
 
+        logger.info(
+            "AudioPipeline Initialized"
+        )
+
     async def process(
         self,
         utterance: bytes
     ):
 
         #
+        # -------------------------
         # STT
+        # -------------------------
         #
 
         text = await self.stt.transcribe(
@@ -50,7 +56,9 @@ class AudioPipeline:
         )
 
         #
+        # -------------------------
         # LLM
+        # -------------------------
         #
 
         response = await self.llm.generate(
@@ -63,16 +71,17 @@ class AudioPipeline:
         )
 
         #
+        # -------------------------
         # TTS
-        #
-        # IMPORTANT
-        #
-        # Returns a LIST of PCM frames,
-        # NOT one giant byte string.
+        # -------------------------
         #
 
-        frames = await self.tts.synthesize(
+        playback_json = await self.tts.synthesize(
             response
         )
 
-        return frames
+        logger.info(
+            "Playback JSON Ready."
+        )
+
+        return playback_json

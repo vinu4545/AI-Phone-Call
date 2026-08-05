@@ -12,6 +12,7 @@ from ESL import ESLconnection
 class CallHandler:
 
     def __init__(self, request):
+
         self.fd = request.fileno()
         self.con = ESLconnection(self.fd)
 
@@ -22,6 +23,7 @@ class CallHandler:
         print("Connected:", self.con.connected())
 
         if not self.con.connected():
+
             print("Failed to establish ESL connection.")
             return
 
@@ -38,7 +40,10 @@ class CallHandler:
         ]
 
         for header in headers:
-            print(f"{header:28}: {info.getHeader(header)}")
+
+            print(
+                f"{header:28}: {info.getHeader(header)}"
+            )
 
         print("========================")
 
@@ -52,6 +57,11 @@ class CallHandler:
 
         print("Answer reply:", reply)
 
+        #
+        # Give FreeSWITCH a moment after answering.
+        #
+        time.sleep(0.5)
+
         command = (
             f"{uuid} "
             f"start "
@@ -60,8 +70,10 @@ class CallHandler:
             f"8000"
         )
 
-        print("\nExecuting API:")
-        print("uuid_audio_stream", command)
+        print("\n============================================================")
+        print("Starting Audio Stream")
+        print("============================================================")
+        print(command)
 
         try:
 
@@ -69,16 +81,58 @@ class CallHandler:
                 f"uuid_audio_stream {command}"
             )
 
-            print("\nAPI reply:")
+            print("\n============================================================")
+            print("API OBJECT")
+            print("============================================================")
             print(reply)
+
+            #
+            # Actual API body
+            #
+            try:
+
+                print("\n============================================================")
+                print("API BODY")
+                print("============================================================")
+                print(reply.getBody())
+
+            except Exception as e:
+
+                print("getBody() failed:", e)
+
+            #
+            # Entire serialized event
+            #
+            try:
+
+                print("\n============================================================")
+                print("SERIALIZED EVENT")
+                print("============================================================")
+                print(reply.serialize())
+
+            except Exception as e:
+
+                print("serialize() failed:", e)
 
         except Exception as e:
 
-            print("\nAPI exception:")
+            print("\nAPI Exception")
             print(e)
 
-        print("\nSleeping for 120 seconds...")
+        #
+        # Check channel every 5 seconds.
+        #
+        for i in range(24):
 
-        time.sleep(120)
+            exists = self.con.api(
+                f"uuid_exists {uuid}"
+            )
+
+            print(
+                f"[{i * 5:03d}s] uuid_exists ->",
+                exists.getBody()
+            )
+
+            time.sleep(5)
 
         print("\nDone.")

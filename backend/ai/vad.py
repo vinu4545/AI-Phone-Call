@@ -1,32 +1,4 @@
 import logging
-
-import numpy as np
-import torch
-
-from silero_vad import load_silero_vad
-from silero_vad import get_speech_timestamps
-
-
-logger = logging.getLogger(__name__)
-
-
-class VoiceActivityDetector:
-    """
-    Voice Activity Detector using Silero VAD.
-    """
-
-    SAMPLE_RATE = 8000
-
-    def __init__(self):
-
-        logger.info("Loading Silero VAD...")
-
-        self.model = load_silero_vad()
-
-        logger.info("Silero VAD Loaded.")
-
-    import logging
-
 import numpy as np
 import torch
 
@@ -41,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class VoiceActivityDetector:
     """
-    Voice Activity Detector using Silero VAD.
+    Silero Voice Activity Detector.
 
     Input:
         PCM16
@@ -64,65 +36,65 @@ class VoiceActivityDetector:
 
         self.model = load_silero_vad()
 
-        logger.info("Silero VAD Loaded Successfully.")
+        logger.info("Silero VAD Loaded.")
+        logger.info("=" * 60)
 
-    # -------------------------------------------------------------
+    def process(self, pcm: bytes):
 
-    def process(
-        self,
-        pcm: bytes
-    ):
+        logger.info("Running VAD on %d bytes", len(pcm))
 
         #
-        # Raw PCM -> int16
+        # Convert bytes -> int16
         #
         samples = np.frombuffer(
             pcm,
             dtype=np.int16
         )
 
-        #
-        # Nothing received.
-        #
-        if len(samples) == 0:
-
-            logger.warning(
-                "Received empty PCM buffer."
-            )
-
-            return {
-                "speech": False
-            }
-
-        #
-        # Debug information
-        #
         logger.info(
             "PCM Stats | Samples=%d | Min=%d | Max=%d | MeanAbs=%.2f",
             len(samples),
-            samples.min(),
-            samples.max(),
-            np.abs(samples).mean(),
+            int(samples.min()) if len(samples) else 0,
+            int(samples.max()) if len(samples) else 0,
+            float(np.abs(samples).mean()) if len(samples) else 0.0,
         )
 
         #
-        # Convert to float32
+        # Normalize to [-1, 1]
         #
-        samples = (
-            samples.astype(np.float32)
-            / 32768.0
-        )
+        samples = samples.astype(np.float32) / 32768.0
+
+        audio = torch.from_numpy(samples)
 
         #
-        # Numpy -> Torch
+        # NEW LOGS
         #
-        audio = torch.from_numpy(
-            samples
+        logger.info(
+            "Tensor Shape : %s",
+            tuple(audio.shape)
         )
 
         logger.info(
-            "Running Silero VAD..."
+            "Tensor dtype : %s",
+            audio.dtype
         )
+
+        logger.info(
+            "Tensor Min   : %.5f",
+            float(audio.min())
+        )
+
+        logger.info(
+            "Tensor Max   : %.5f",
+            float(audio.max())
+        )
+
+        logger.info(
+            "Tensor MeanAbs : %.5f",
+            float(audio.abs().mean())
+        )
+
+        logger.info("Running Silero VAD...")
 
         timestamps = get_speech_timestamps(
             audio,

@@ -1,86 +1,73 @@
 import asyncio
 import logging
 
-
 logger = logging.getLogger(__name__)
 
 
 class MediaSession:
     """
-    Represents one active phone call.
+    Represents one phone call.
 
-    MediaSession owns ONLY:
+    Incoming audio:
+        FreeSWITCH
+            ↓
+        AudioReceiver
+            ↓
+        incoming_audio Queue
 
-        • websocket
-        • queues
-        • call metadata
+    Outgoing audio:
+        AudioProcessor
+            ↓
+        websocket.send(JSON)
 
-    It does NOT own:
-
-        • VAD
-        • buffers
-        • speech state
-
-    Those belong to SpeechDetector.
+    There is NO outgoing queue anymore.
     """
 
     def __init__(self, websocket):
 
-        # -----------------------------------------
-        # Network
-        # -----------------------------------------
-
         self.websocket = websocket
 
-        # -----------------------------------------
-        # Audio Queues
-        # -----------------------------------------
-
+        #
+        # Incoming PCM frames
+        #
         self.incoming_audio = asyncio.Queue()
 
-        self.outgoing_audio = asyncio.Queue()
-
-        # -----------------------------------------
-        # Call Metadata
-        # -----------------------------------------
-
-        self.call_uuid = None
-
-        self.esl_connection = None
-
-        # -----------------------------------------
-        # Session State
-        # -----------------------------------------
-
+        #
+        # Call state
+        #
         self.running = True
 
-    # =====================================================
-    # Incoming Queue
-    # =====================================================
+    # -----------------------------------------------------
 
-    async def push_incoming_audio(self, pcm: bytes):
+    async def push_incoming_audio(
+        self,
+        pcm: bytes
+    ):
 
         await self.incoming_audio.put(pcm)
+
+    # -----------------------------------------------------
 
     async def get_incoming_audio(self):
 
         return await self.incoming_audio.get()
 
-    # =====================================================
-    # Outgoing Queue
-    # =====================================================
+    # -----------------------------------------------------
 
-    async def push_outgoing_audio(self, pcm: bytes):
+    async def send_json(
+        self,
+        payload: str
+    ):
+        """
+        Send JSON message to mod_audio_stream.
 
-        await self.outgoing_audio.put(pcm)
+        Playback uses TEXT messages,
+        not binary websocket frames.
+        """
 
-    async def get_outgoing_audio(self):
+        await self.websocket.send(payload)
 
-        return await self.outgoing_audio.get()
-
-    # =====================================================
-    # Cleanup
-    # =====================================================
+    # -----------------------------------------------------
 
     async def close(self):
 
@@ -89,9 +76,7 @@ class MediaSession:
         self.running = False
 
         while not self.incoming_audio.empty():
-            self.incoming_audio.get_nowait()
 
-        while not self.outgoing_audio.empty():
-            self.outgoing_audio.get_nowait()
+            self.incoming_audio.get_nowait()
 
         logger.info("MediaSession Closed")

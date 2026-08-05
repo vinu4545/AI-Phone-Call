@@ -1,57 +1,57 @@
-import asyncio
-import logging
+# import asyncio
+# import logging
 
-from websockets.exceptions import ConnectionClosed
-from backend.media.media_session import MediaSession
-
-
-logger = logging.getLogger(__name__)
+# from websockets.exceptions import ConnectionClosed
+# from backend.media.media_session import MediaSession
 
 
-class AudioSender:
+# logger = logging.getLogger(__name__)
 
-    FRAME_DURATION = 0.02      # 20 ms
 
-    def __init__(self, session: MediaSession):
+# class AudioSender:
 
-        self.session = session
+#     FRAME_DURATION = 0.02      # 20 ms
 
-    async def start(self):
+#     def __init__(self, session: MediaSession):
 
-        logger.info("AudioSender Started")
+#         self.session = session
 
-        websocket = self.session.websocket
+#     async def start(self):
 
-        try:
+#         logger.info("AudioSender Started")
 
-            while self.session.running:
+#         websocket = self.session.websocket
 
-                pcm = await self.session.get_outgoing_audio()
+#         try:
 
-                if pcm is None:
-                    continue
+#             while self.session.running:
 
-                await websocket.send(pcm)
+#                 pcm = await self.session.get_outgoing_audio()
 
-                logger.info(
-                    "Sender -> %d bytes",
-                    len(pcm)
-                )
+#                 if pcm is None:
+#                     continue
 
-                #
-                # IMPORTANT
-                # Stream at real-time speed.
-                #
-                await asyncio.sleep(self.FRAME_DURATION)
+#                 await websocket.send(pcm)
 
-        except ConnectionClosed:
+#                 logger.info(
+#                     "Sender -> %d bytes",
+#                     len(pcm)
+#                 )
 
-            logger.info("Sender WebSocket Closed")
+#                 #
+#                 # IMPORTANT
+#                 # Stream at real-time speed.
+#                 #
+#                 await asyncio.sleep(self.FRAME_DURATION)
 
-        except Exception:
+#         except ConnectionClosed:
 
-            logger.exception("AudioSender crashed")
+#             logger.info("Sender WebSocket Closed")
 
-        finally:
+#         except Exception:
 
-            logger.info("AudioSender Stopped")
+#             logger.exception("AudioSender crashed")
+
+#         finally:
+
+#             logger.info("AudioSender Stopped")
